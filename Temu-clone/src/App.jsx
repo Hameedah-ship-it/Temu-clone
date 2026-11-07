@@ -51,17 +51,20 @@ function App() {
     return () => clearTimeout(timer);
   }, [notification]);
 
-  function addToCart(product) {
+  // Add the selected quantity to the cart
+  function addToCart(product, quantity = 1) {
     setCartItems(old => {
       const found = old.find(item => item.id === product.id);
+
       return found
         ? old.map(item =>
             item.id === product.id
-              ? { ...item, quantity: item.quantity + 1 }
+              ? { ...item, quantity: item.quantity + quantity }
               : item
           )
-        : [...old, { ...product, quantity: 1 }];
+        : [...old, { ...product, quantity }];
     });
+
     setNotification(product.title);
   }
 
@@ -213,6 +216,7 @@ function Account({ orders }) {
     <main className="page account-page">
       <div className="account-box">
         <h2>My Account</h2>
+
         {editing ? (
           <form className="account-form" onSubmit={save}>
             <label>Name</label>
@@ -223,6 +227,7 @@ function Account({ orders }) {
               onChange={e => setName(e.target.value)}
               placeholder="Enter your name"
             />
+
             <label>Email</label>
             <input
               type="email"
@@ -231,6 +236,7 @@ function Account({ orders }) {
               onChange={e => setEmail(e.target.value)}
               placeholder="Enter your email"
             />
+
             <button className="main-btn">Save Details</button>
           </form>
         ) : (
@@ -242,6 +248,7 @@ function Account({ orders }) {
             </button>
           </div>
         )}
+
         <Link to="/orders" className="account-orders">
           My Orders ({orders.length})
         </Link>
@@ -255,6 +262,7 @@ function Favorites({ favorites, toggleFavorite, addToCart }) {
   return (
     <main className="page">
       <h1>My Favourites</h1>
+
       {favorites.length === 0 ? (
         <p>No favourite products yet.</p>
       ) : (
@@ -265,10 +273,13 @@ function Favorites({ favorites, toggleFavorite, addToCart }) {
                 <img src={product.thumbnail} alt={product.title} />
                 <h3>{product.title}</h3>
               </Link>
+
               <p className="product-price">${product.price}</p>
+
               <button className="main-btn" onClick={() => addToCart(product)}>
                 Add to Cart
               </button>
+
               <button
                 className="remove-btn"
                 onClick={() => toggleFavorite(product)}
