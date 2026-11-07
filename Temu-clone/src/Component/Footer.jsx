@@ -25,7 +25,7 @@ function Footer() {
         </div>
       </div>
 
-      <p className="copyright">© 2026 Temu Clone. School project demonstration.</p>
+      <p className="copyright">© 2026 Temu Clone. Cohort 6 Academy Project</p>
     </footer>
   );
 }

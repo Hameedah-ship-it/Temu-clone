@@ -1,33 +1,44 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
 
+import { Link, useNavigate, useLocation } from "react-router";
 
-function ProductList({ addToCart, searchTerm = "" }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(10);
+function ProductList({ products, loading, addToCart, searchTerm = "" }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    fetch("https://dummyjson.com/products?limit=0")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load products");
-        return res.json();
-      })
-      .then((data) => {
-        setProducts(data.products || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
-  }, []);
+  const params = new URLSearchParams(location.search);
+  const category = params.get("category") || "all";
+  const urlSearch = params.get("search") ?? searchTerm;
+  const searching = urlSearch.trim().length > 0;
 
-  const filteredProducts = products.filter((product) =>
-    product.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const categories = {
+    clothing: ["tops", "mens-shirts", "womens-dresses"],
+    shoes: ["mens-shoes", "womens-shoes"],
+    accessories: [
+      "mens-watches", "womens-watches", "womens-bags",
+      "womens-jewellery", "sunglasses", "mobile-accessories",
+      "sports-accessories"
+    ],
+    beauty: ["beauty", "skin-care"],
+    fragrances: ["fragrances"],
+    home: ["furniture", "home-decoration", "kitchen-accessories"],
+    electronics: ["smartphones", "laptops", "tablets"],
+    groceries: ["groceries"]
+  };
 
-  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const filteredProducts = products.filter(product => {
+    const matchesCategory =
+      searching ||
+      category === "all" ||
+      (categories[category]
+        ? categories[category].includes(product.category)
+        : product.category === category);
+
+    const matchesSearch =
+      product.title.toLowerCase().includes(urlSearch.toLowerCase()) ||
+      product.category.toLowerCase().includes(urlSearch.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
 
   function handleBuyNow(product) {
     addToCart(product);
@@ -39,33 +50,34 @@ function ProductList({ addToCart, searchTerm = "" }) {
   }
 
   return (
-    <section className="products-section">
-      <h2>Our Products</h2>
+    <section className="products-section" id="products">
+      <h2>
+        {searching
+          ? `Search Results for "${urlSearch}"`
+          : category === "all"
+          ? "All Products"
+          : category === "home"
+          ? "Home & Living"
+          : category.charAt(0).toUpperCase() + category.slice(1)}
+      </h2>
 
-      {visibleProducts.length === 0 ? (
-        <p>No products found.</p>
+      {filteredProducts.length === 0 ? (
+        <p className="no-products">No products found.</p>
       ) : (
         <div className="products-grid">
-          {visibleProducts.map((product) => (
+          {filteredProducts.map(product => (
             <div className="product-card" key={product.id}>
-              <Link
-                to={`/products/${product.id}`}
-                className="product-link"
-              >
+              <Link to={`/products/${product.id}`} className="product-link">
                 <img
                   src={product.thumbnail}
                   alt={product.title}
                   className="product-image"
                 />
-
                 <h3>{product.title}</h3>
               </Link>
 
               <p className="product-category">{product.category}</p>
-
-              <p className="product-price">
-                ${product.price}
-              </p>
+              <p className="product-price">${product.price}</p>
 
               <div className="product-buttons">
                 <button
@@ -86,15 +98,6 @@ function ProductList({ addToCart, searchTerm = "" }) {
             </div>
           ))}
         </div>
-      )}
-
-      {visibleCount < filteredProducts.length && (
-        <button
-          className="see-more-btn"
-          onClick={() => setVisibleCount((prev) => prev + 10)}
-        >
-          See More
-        </button>
       )}
     </section>
   );

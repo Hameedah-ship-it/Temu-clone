@@ -3,12 +3,15 @@ import { Link } from "react-router";
 
 function Home() {
   const categories = [
+    { name: "All Products", slug: "all" },
     { name: "Clothing", slug: "clothing" },
     { name: "Shoes", slug: "shoes" },
     { name: "Accessories", slug: "accessories" },
     { name: "Beauty", slug: "beauty" },
     { name: "Fragrances", slug: "fragrances" },
-    { name: "Home & Living", slug: "home" }
+    { name: "Home & Living", slug: "home" },
+    { name: "Electronics", slug: "electronics" },
+    { name: "Groceries", slug: "groceries" }
   ];
 
   return (

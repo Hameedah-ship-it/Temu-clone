@@ -1,13 +1,23 @@
 
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 function Navbar({ cartItems, searchTerm, setSearchTerm }) {
   const navigate = useNavigate();
-  const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const count = cartItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   function search(e) {
     e.preventDefault();
-    navigate(`/?search=${encodeURIComponent(searchTerm)}`);
+    if (!searchTerm.trim()) return;
+
+    setIsSearching(true);
+    navigate(`/?search=${encodeURIComponent(searchTerm)}#products`);
+    setTimeout(() => setIsSearching(false), 700);
   }
 
   return (
@@ -28,27 +38,22 @@ function Navbar({ cartItems, searchTerm, setSearchTerm }) {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <button>⌕</button>
+
+          <button type="submit" disabled={isSearching}>
+            {isSearching ? (
+              <span className="search-spinner"></span>
+            ) : "⌕"}
+          </button>
         </form>
 
         <nav className="nav-links">
+          <Link to="/">Home</Link>
           <Link to="/account">Account</Link>
           <Link to="/orders">Orders</Link>
           <Link to="/support">Support</Link>
           <Link to="/cart">🛒 Cart ({count})</Link>
         </nav>
       </header>
-
-      <div className="category-nav">
-        <Link to="/">Home</Link>
-        <Link to="/?category=clothing">Clothing</Link>
-        <Link to="/?category=shoes">Shoes</Link>
-        <Link to="/?category=accessories">Accessories</Link>
-        <Link to="/?category=beauty">Beauty</Link>
-        <Link to="/?category=fragrances">Fragrances</Link>
-        <Link to="/?category=home">Home & Living</Link>
-        <Link to="/favorites">Favourites</Link>
-      </div>
     </>
   );
 }
