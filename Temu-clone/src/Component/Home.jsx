@@ -1,7 +1,8 @@
 
 import { Link } from "react-router";
+import ProductList from "./ProductList";
 
-function Home() {
+function Home({ products, loading, addToCart, searchTerm }) {
   const categories = [
     { name: "All Products", slug: "all" },
     { name: "Clothing", slug: "clothing" },
@@ -42,6 +43,15 @@ function Home() {
             {category.name}
           </Link>
         ))}
+      </section>
+
+      <section id="products">
+        <ProductList
+          products={products}
+          loading={loading}
+          addToCart={addToCart}
+          searchTerm={searchTerm}
+        />
       </section>
     </>
   );

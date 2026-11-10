@@ -2,56 +2,53 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-function Navbar({ cartItems, searchTerm, setSearchTerm }) {
+function Navbar({ cartItems, searchTerm, setSearchTerm, currentUser, logout }) {
   const navigate = useNavigate();
   const [isSearching, setIsSearching] = useState(false);
 
   const count = cartItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0
+    (sum, item) => sum + item.quantity, 0
   );
 
-  function search(e) {
+  function handleSearch(e) {
     e.preventDefault();
-    if (!searchTerm.trim()) return;
-
-    setIsSearching(true);
     navigate(`/?search=${encodeURIComponent(searchTerm)}#products`);
-    setTimeout(() => setIsSearching(false), 700);
   }
 
   return (
     <>
       <div className="top-bar">
-        <span>Free Shipping on Eligible Orders</span>
-        <span>Price Adjustment</span>
-        <span>Great Deals Every Day</span>
+        Free Shipping on All Orders | Great Deals Every Day
       </div>
 
       <header className="navbar">
-        <Link to="/" className="logo">TEMU</Link>
+        <Link to="/" className="logo">SHOPHUB</Link>
 
-        <form className="search-form" onSubmit={search}>
+        <form onSubmit={handleSearch} className="search-form">
           <input
-            type="text"
+            type="search"
             placeholder="Search for products..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-
-          <button type="submit" disabled={isSearching}>
-            {isSearching ? (
-              <span className="search-spinner"></span>
-            ) : "⌕"}
-          </button>
+          <button type="submit">Search</button>
         </form>
 
-        <nav className="nav-links">
+        <nav>
           <Link to="/">Home</Link>
-          <Link to="/account">Account</Link>
           <Link to="/orders">Orders</Link>
           <Link to="/support">Support</Link>
-          <Link to="/cart">🛒 Cart ({count})</Link>
+          <Link to="/favorites">Favorites</Link>
+          <Link to="/cart">Cart ({count})</Link>
+
+          {currentUser ? (
+            <>
+              <Link to="/account">{currentUser.name}</Link>
+              <button className="logout-nav" onClick={logout}>Logout</button>
+            </>
+          ) : (
+            <Link to="/account">Account / Login</Link>
+          )}
         </nav>
       </header>
     </>

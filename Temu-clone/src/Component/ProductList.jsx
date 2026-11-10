@@ -23,6 +23,7 @@ function ProductList({ products, loading, addToCart, searchTerm = "" }) {
     home: ["furniture", "home-decoration", "kitchen-accessories"],
     electronics: ["smartphones", "laptops", "tablets"],
     groceries: ["groceries"]
+    
   };
 
   const filteredProducts = products.filter(product => {

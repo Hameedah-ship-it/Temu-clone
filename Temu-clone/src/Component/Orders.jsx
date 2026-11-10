@@ -1,62 +1,68 @@
 
 import { Link, useLocation } from "react-router";
 
-function Orders({ orders }) {
+function Orders({ orders = [] }) {
   const location = useLocation();
-  const confirmedOrder = location.state?.order;
+  const order = location.state?.order || orders[0];
+
+  if (!order) {
+    return (
+      <div className="orders-container">
+        <h2>My Orders</h2>
+        <p>You haven't placed any orders yet.</p>
+        <Link to="/">Start Shopping</Link>
+      </div>
+    );
+  }
 
   return (
-    <main className="page">
-      {confirmedOrder && (
-        <div className="order-success">
-          <div className="success-icon">✓</div>
-          <h1>Order Confirmed!</h1>
-          <p className="thank-you">
-            Thank you, {confirmedOrder.details.name}, for shopping with TEMU!
+    <div className="orders-container">
+      <h2>Order Confirmed!</h2>
+      <p>Thank you for shopping with us.</p>
+
+      <div className="receipt">
+        <h3>Order Receipt</h3>
+        <p><strong>Order ID:</strong> {order.id}</p>
+        <p><strong>Date:</strong> {order.date}</p>
+        <p><strong>Customer:</strong> {order.details.name}</p>
+        <p><strong>Email:</strong> {order.details.email}</p>
+        <p><strong>Customer Type:</strong> {order.customerType}</p>
+
+        <hr />
+
+        <h3>Products</h3>
+        {order.products.map(item => (
+          <p key={item.id}>
+            {item.title} × {item.quantity} — $
+            {(item.price * item.quantity).toFixed(2)}
           </p>
+        ))}
 
-          <div className="confirmation-details">
-            <h3>Order Information</h3>
-            <p>Order Number: <b>{confirmedOrder.id}</b></p>
-            <p>Date: {confirmedOrder.date}</p>
-            <p>Total Amount: <b>${confirmedOrder.total.toFixed(2)}</b></p>
+        <hr />
 
-            <hr />
+        <p><strong>Total:</strong> ${order.total.toFixed(2)}</p>
+        <p><strong>Payment Method:</strong> {order.paymentMethod}</p>
+        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
+        <p><strong>Delivery Address:</strong> {order.details.address}</p>
+        <p><strong>Phone:</strong> {order.details.phone}</p>
 
-            <h3>Delivery Information</h3>
-            <p><b>{confirmedOrder.details.name}</b></p>
-            <p>{confirmedOrder.details.phone}</p>
-            <p>{confirmedOrder.details.email}</p>
-            <p>{confirmedOrder.details.address}</p>
-          </div>
+        <p className="demo-payment-note">
+          Demo receipt only. No real payment was processed.
+        </p>
+      </div>
 
-          <p className="delivery-message">
-            Your order will be delivered to the address you provided.
-            Thank you for your patronage!
-          </p>
+      <Link to="/">Continue Shopping</Link>
 
-          <Link to="/" className="main-btn">
-            Continue Shopping
-          </Link>
+      <h2>Order History</h2>
+      {orders.map(item => (
+        <div className="order-history" key={item.id}>
+          <p>Order #{item.id}</p>
+          <p>Customer: {item.details.name}</p>
+          <p>Total: ${item.total.toFixed(2)}</p>
+          <p>{item.paymentStatus}</p>
         </div>
-      )}
-
-      <h2 className="orders-heading">My Orders</h2>
-
-      {orders.length === 0 ? (
-        <p>You have not placed any orders yet.</p>
-      ) : (
-        [...orders].reverse().map(order => (
-          <div className="order-card" key={order.id}>
-            <h3>Order {order.id}</h3>
-            <p>{order.date}</p>
-            <p>{order.items.length} product(s)</p>
-            <b>${order.total.toFixed(2)}</b>
-            <p className="success-text">Demo order confirmed</p>
-          </div>
-        ))
-      )}
-    </main>
+      ))}
+    </div>
   );
 }
 

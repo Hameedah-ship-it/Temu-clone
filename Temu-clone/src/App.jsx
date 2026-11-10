@@ -1,9 +1,8 @@
 
 import { useEffect, useState } from "react";
-import { Routes, Route, Link } from "react-router";
+import { Routes, Route } from "react-router";
 import Navbar from "./Component/Navbar";
 import Home from "./Component/Home";
-import ProductList from "./Component/ProductList";
 import ProductDetails from "./Component/ProductDetails";
 import Cart from "./Component/Cart";
 import Orders from "./Component/Orders";
@@ -16,20 +15,33 @@ const API = "https://dummyjson.com/products?limit=0";
 function App() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cartItems, setCartItems] = useState(() => JSON.parse(localStorage.getItem("cart")) || []);
-  const [orders, setOrders] = useState(() => JSON.parse(localStorage.getItem("orders")) || []);
-  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem("favorites")) || []);
+
+  const [cartItems, setCartItems] = useState(
+    () => JSON.parse(localStorage.getItem("cart")) || []
+  );
+
+  const [orders, setOrders] = useState(
+    () => JSON.parse(localStorage.getItem("orders")) || []
+  );
+
+  const [favorites, setFavorites] = useState(
+    () => JSON.parse(localStorage.getItem("favorites")) || []
+  );
+
+  const [currentUser, setCurrentUser] = useState(
+    () => JSON.parse(localStorage.getItem("currentUser")) || null
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [notification, setNotification] = useState("");
 
   useEffect(() => {
     fetch(API)
-      .then(response => {
-        if (!response.ok) throw new Error("Failed to fetch products");
-        return response.json();
+      .then(res => {
+        if (!res.ok) throw new Error("Unable to load products");
+        return res.json();
       })
       .then(data => setProducts(data.products || []))
-      .catch(error => console.error("Product fetching error:", error))
+      .catch(error => console.error(error))
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,26 +58,27 @@ function App() {
   }, [favorites]);
 
   useEffect(() => {
-    if (!notification) return;
-    const timer = setTimeout(() => setNotification(""), 2500);
-    return () => clearTimeout(timer);
-  }, [notification]);
+    if (currentUser) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("currentUser");
+    }
+  }, [currentUser]);
 
-  // Add the selected quantity to the cart
-  function addToCart(product, quantity = 1) {
+  function addToCart(product) {
     setCartItems(old => {
       const found = old.find(item => item.id === product.id);
 
-      return found
-        ? old.map(item =>
-            item.id === product.id
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          )
-        : [...old, { ...product, quantity }];
-    });
+      if (found) {
+        return old.map(item =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
 
-    setNotification(product.title);
+      return [...old, { ...product, quantity: 1 }];
+    });
   }
 
   function removeFromCart(id) {
@@ -76,7 +89,7 @@ function App() {
     setCartItems(old =>
       old.map(item =>
         item.id === id
-          ? { ...item, quantity: Math.max(1, amount) }
+          ? { ...item, quantity: Math.max(1, item.quantity + amount) }
           : item
       )
     );
@@ -90,20 +103,79 @@ function App() {
     );
   }
 
-  function placeOrder(details) {
+  function registerAccount(name, email, password) {
+    const accounts = JSON.parse(localStorage.getItem("demoAccounts")) || [];
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (accounts.some(account => account.email === cleanEmail)) {
+      return "An account with this email already exists.";
+    }
+
+    const account = {
+      name: name.trim(),
+      email: cleanEmail,
+      password
+    };
+
+    localStorage.setItem(
+      "demoAccounts",
+      JSON.stringify([...accounts, account])
+    );
+
+    setCurrentUser({
+      name: account.name,
+      email: account.email
+    });
+
+    return "success";
+  }
+
+  function loginAccount(email, password) {
+    const accounts = JSON.parse(localStorage.getItem("demoAccounts")) || [];
+    const cleanEmail = email.trim().toLowerCase();
+
+    const account = accounts.find(
+      item => item.email === cleanEmail && item.password === password
+    );
+
+    if (!account) {
+      return "Incorrect email or password.";
+    }
+
+    setCurrentUser({
+      name: account.name,
+      email: account.email
+    });
+
+    return "success";
+  }
+
+  // Log out without deleting the registered account.
+  function logoutAccount() {
+    localStorage.removeItem("currentUser");
+    setCurrentUser(null);
+  }
+
+  function placeOrder(details, paymentMethod) {
     const order = {
-      id: "TM" + Date.now(),
+      id: Date.now(),
       date: new Date().toLocaleString(),
-      items: cartItems,
-      details,
+      products: cartItems,
       total: cartItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
-      )
+      ),
+      details,
+      customerName: currentUser ? currentUser.name : details.name,
+      customerEmail: currentUser ? currentUser.email : details.email,
+      paymentMethod,
+      paymentStatus: "Demo payment successful",
+      customerType: currentUser ? "Registered customer" : "Guest"
     };
 
-    setOrders(old => [...old, order]);
+    setOrders(old => [order, ...old]);
     setCartItems([]);
+
     return order;
   }
 
@@ -113,34 +185,20 @@ function App() {
         cartItems={cartItems}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
+        currentUser={currentUser}
+        logout={logoutAccount}
       />
-
-      {notification && (
-        <div className="cart-notification">
-          <span className="notification-check">✓</span>
-          <div className="notification-info">
-            <strong>Added to cart!</strong>
-            <p>{notification}</p>
-          </div>
-          <Link to="/cart">View Cart</Link>
-        </div>
-      )}
 
       <Routes>
         <Route
           path="/"
           element={
-            <>
-              <Home />
-              <ProductList
-                products={products}
-                loading={loading}
-                addToCart={addToCart}
-                favorites={favorites}
-                toggleFavorite={toggleFavorite}
-                searchTerm={searchTerm}
-              />
-            </>
+            <Home
+              products={products}
+              loading={loading}
+              addToCart={addToCart}
+              searchTerm={searchTerm}
+            />
           }
         />
 
@@ -150,7 +208,6 @@ function App() {
             <ProductDetails
               products={products}
               addToCart={addToCart}
-              favorites={favorites}
               toggleFavorite={toggleFavorite}
             />
           }
@@ -164,33 +221,42 @@ function App() {
               removeFromCart={removeFromCart}
               changeQuantity={changeQuantity}
               placeOrder={placeOrder}
+              currentUser={currentUser}
             />
           }
         />
 
-        <Route path="/account" element={<Account orders={orders} />} />
-
         <Route
-          path="/orders"
-          element={<Orders orders={orders} />}
+          path="/account"
+          element={
+            <Account
+              currentUser={currentUser}
+              registerAccount={registerAccount}
+              loginAccount={loginAccount}
+              logoutAccount={logoutAccount}
+            />
+          }
         />
+
+        <Route path="/orders" element={<Orders orders={orders} />} />
 
         <Route
           path="/favorites"
-          element={
-            <Favorites
-              favorites={favorites}
-              toggleFavorite={toggleFavorite}
-              addToCart={addToCart}
-            />
-          }
+          element={<Favorites favorites={favorites} />}
         />
 
         <Route path="/support" element={<Support />} />
 
         <Route
           path="*"
-          element={<h2 className="not-found">Page not found</h2>}
+          element={
+            <Home
+              products={products}
+              loading={loading}
+              addToCart={addToCart}
+              searchTerm={searchTerm}
+            />
+          }
         />
       </Routes>
 
@@ -199,98 +265,225 @@ function App() {
   );
 }
 
-/* ACCOUNT */
-function Account({ orders }) {
-  const [name, setName] = useState(localStorage.getItem("customerName") || "");
-  const [email, setEmail] = useState(localStorage.getItem("customerEmail") || "");
-  const [editing, setEditing] = useState(!localStorage.getItem("customerName"));
+function Account({
+  currentUser,
+  registerAccount,
+  loginAccount,
+  logoutAccount
+}) {
+  const [signup, setSignup] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
-  function save(e) {
+  // Clear all form details whenever the user logs out.
+  useEffect(() => {
+    if (!currentUser) {
+      setName("");
+      setEmail("");
+      setPassword("");
+      setError("");
+      setShowPassword(false);
+      setSignup(false);
+      setConfirmLogout(false);
+    }
+  }, [currentUser]);
+
+  function handleSubmit(e) {
     e.preventDefault();
-    localStorage.setItem("customerName", name);
-    localStorage.setItem("customerEmail", email);
-    setEditing(false);
+    setError("");
+
+    const result = signup
+      ? registerAccount(name, email, password)
+      : loginAccount(email, password);
+
+    if (result !== "success") {
+      setError(result);
+    }
+  }
+
+  function handleLogout() {
+    setConfirmLogout(false);
+    logoutAccount();
+  }
+
+  if (currentUser) {
+    return (
+      <div className="account-page">
+        <div className="account-dashboard">
+          <div className="account-avatar">
+            {currentUser.name.charAt(0).toUpperCase()}
+          </div>
+
+          <p className="account-tag">MY ACCOUNT</p>
+          <h2>Welcome back, {currentUser.name}!</h2>
+          <p className="account-email">{currentUser.email}</p>
+
+          <div className="account-info">
+            <p>
+              <strong>Account Name</strong>
+              <span>{currentUser.name}</span>
+            </p>
+
+            <p>
+              <strong>Email Address</strong>
+              <span>{currentUser.email}</span>
+            </p>
+
+            <p>
+              <strong>Account Status</strong>
+              <span>Active</span>
+            </p>
+          </div>
+
+          {!confirmLogout ? (
+            <button
+              className="logout-button"
+              onClick={() => setConfirmLogout(true)}
+            >
+              Log Out
+            </button>
+          ) : (
+            <div className="logout-confirm">
+              <p>Are you sure you want to log out?</p>
+
+              <button onClick={handleLogout}>
+                Yes, Log Out
+              </button>
+
+              <button onClick={() => setConfirmLogout(false)}>
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <main className="page account-page">
-      <div className="account-box">
-        <h2>My Account</h2>
+    <div className="account-page">
+      <div className="account-card">
+        <div className="account-brand">SHOPHUB</div>
 
-        {editing ? (
-          <form className="account-form" onSubmit={save}>
-            <label>Name</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Enter your name"
-            />
+        <h2>{signup ? "Create Your Account" : "Welcome Back!"}</h2>
 
-            <label>Email</label>
+        <p className="account-subtitle">
+          {signup
+            ? "Join us and enjoy easy shopping."
+            : "Log in to continue shopping."}
+        </p>
+
+        <div className="account-tabs">
+          <button
+            className={!signup ? "active" : ""}
+            onClick={() => {
+              setSignup(false);
+              setError("");
+            }}
+          >
+            Login
+          </button>
+
+          <button
+            className={signup ? "active" : ""}
+            onClick={() => {
+              setSignup(true);
+              setError("");
+            }}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {signup && (
+            <label>
+              Full Name
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </label>
+          )}
+
+          <label>
+            Email Address
             <input
               type="email"
-              required
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Enter your email"
+              required
             />
+          </label>
 
-            <button className="main-btn">Save Details</button>
-          </form>
-        ) : (
-          <div className="account-details">
-            <h3>{name}</h3>
-            <p>{email}</p>
-            <button className="main-btn" onClick={() => setEditing(true)}>
-              Edit Details
-            </button>
-          </div>
-        )}
+          <label>
+            Password
+            <div className="password-field">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                minLength={6}
+                required
+              />
 
-        <Link to="/orders" className="account-orders">
-          My Orders ({orders.length})
-        </Link>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </label>
+
+          {error && <p className="account-error">{error}</p>}
+
+          <button className="account-submit" type="submit">
+            {signup ? "Create Account" : "Login"}
+          </button>
+        </form>
+
+        <p className="account-switch">
+          {signup
+            ? "Already have an account?"
+            : "Don't have an account?"}
+
+          <button
+            onClick={() => {
+              setSignup(!signup);
+              setError("");
+              setName("");
+              setEmail("");
+              setPassword("");
+            }}
+          >
+            {signup ? "Login" : "Sign Up"}
+          </button>
+        </p>
       </div>
-    </main>
+    </div>
   );
 }
 
-/* FAVOURITES */
-function Favorites({ favorites, toggleFavorite, addToCart }) {
+function Favorites({ favorites }) {
   return (
-    <main className="page">
-      <h1>My Favourites</h1>
-
-      {favorites.length === 0 ? (
-        <p>No favourite products yet.</p>
-      ) : (
-        <div className="products-grid">
-          {favorites.map(product => (
-            <div className="product-card" key={product.id}>
-              <Link to={`/products/${product.id}`}>
-                <img src={product.thumbnail} alt={product.title} />
-                <h3>{product.title}</h3>
-              </Link>
-
-              <p className="product-price">${product.price}</p>
-
-              <button className="main-btn" onClick={() => addToCart(product)}>
-                Add to Cart
-              </button>
-
-              <button
-                className="remove-btn"
-                onClick={() => toggleFavorite(product)}
-              >
-                Remove Favourite
-              </button>
-            </div>
-          ))}
+    <div className="products-grid">
+      {favorites.map(product => (
+        <div className="product-card" key={product.id}>
+          <img src={product.thumbnail} alt={product.title} />
+          <h3>{product.title}</h3>
+          <p>${product.price}</p>
         </div>
-      )}
-    </main>
+      ))}
+    </div>
   );
 }
 
