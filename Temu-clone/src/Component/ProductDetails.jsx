@@ -10,6 +10,13 @@ function ProductDetails({ products, addToCart, favorites = [], toggleFavorite })
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState("");
 
+  const money = amount =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2
+    }).format(amount);
+
   useEffect(() => {
     if (product) {
       setSelectedImage(product.images?.[0] || product.thumbnail);
@@ -70,7 +77,7 @@ function ProductDetails({ products, addToCart, favorites = [], toggleFavorite })
           <span>{product.brand || "Quality Product"}</span>
         </div>
 
-        <h2 className="details-price">${product.price}</h2>
+        <h2 className="details-price">{money(product.price)}</h2>
 
         {product.discountPercentage > 0 && (
           <p className="details-discount">

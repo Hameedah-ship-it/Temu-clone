@@ -5,6 +5,13 @@ function Orders({ orders = [] }) {
   const location = useLocation();
   const order = location.state?.order || orders[0];
 
+  const money = amount =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2
+    }).format(amount);
+
   if (!order) {
     return (
       <div className="orders-container">
@@ -33,14 +40,13 @@ function Orders({ orders = [] }) {
         <h3>Products</h3>
         {order.products.map(item => (
           <p key={item.id}>
-            {item.title} × {item.quantity} — $
-            {(item.price * item.quantity).toFixed(2)}
+            {item.title} × {item.quantity} — {money(item.price * item.quantity)}
           </p>
         ))}
 
         <hr />
 
-        <p><strong>Total:</strong> ${order.total.toFixed(2)}</p>
+        <p><strong>Total:</strong> {money(order.total)}</p>
         <p><strong>Payment Method:</strong> {order.paymentMethod}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
         <p><strong>Delivery Address:</strong> {order.details.address}</p>
@@ -58,7 +64,7 @@ function Orders({ orders = [] }) {
         <div className="order-history" key={item.id}>
           <p>Order #{item.id}</p>
           <p>Customer: {item.details.name}</p>
-          <p>Total: ${item.total.toFixed(2)}</p>
+          <p>Total: {money(item.total)}</p>
           <p>{item.paymentStatus}</p>
         </div>
       ))}

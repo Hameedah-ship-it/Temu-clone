@@ -1701,3 +1701,97 @@ button {
     font-size: 22px;
   }
 }
+
+/* PAYSTACK DEMO GATEWAY */
+.gateway-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.gateway-box {
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+}
+
+.gateway-box .paystack-logo {
+  margin-bottom: 12px;
+  color: #0ba4a0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.gateway-box > p {
+  margin: 10px 0;
+  color: #666;
+}
+
+.gateway-info {
+  padding: 15px;
+  margin: 20px 0;
+  background: #f5f5f5;
+  border-radius: 8px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.gateway-info p {
+  margin: 10px 0;
+  color: #555;
+}
+
+.gateway-box .demo-payment-note {
+  margin: 15px 0;
+  padding: 12px;
+  background: #f5efe6;
+  color: #6F4E37;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gateway-box button {
+  width: 100%;
+  padding: 13px 16px;
+  margin-top: 10px;
+  color: white;
+  background: #6F4E37;
+  border: 0;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.gateway-box button:hover {
+  background: #3E2723;
+}
+
+.gateway-box button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gateway-box .cancel-payment {
+  color: #333;
+  background: #eee;
+}
+
+.gateway-box .cancel-payment:hover {
+  background: #ddd;
+}
+
+@media (max-width: 480px) {
+  .gateway-box {
+    padding: 23px 18px;
+  }
+}

@@ -2,22 +2,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-function Cart({
-  cartItems,
-  removeFromCart,
-  changeQuantity,
-  placeOrder,
-  currentUser
-}) {
+function Cart({ cartItems, removeFromCart, changeQuantity, placeOrder, currentUser }) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("Paystack Demo");
+  const [showGateway, setShowGateway] = useState(false);
   const [form, setForm] = useState({
     name: currentUser?.name || "",
     email: currentUser?.email || "",
     phone: "",
     address: ""
   });
-
   const [processing, setProcessing] = useState(false);
   const navigate = useNavigate();
 
@@ -32,34 +25,36 @@ function Cart({
   }, [currentUser]);
 
   const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
+    (sum, item) => sum + item.price * item.quantity, 0
   );
 
+  const money = amount => `₦${amount.toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+
   function handleChange(e) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   }
 
   function handleCheckout(e) {
     e.preventDefault();
+    setShowGateway(true);
+  }
 
+  function confirmPayment() {
     if (processing) return;
-
     setProcessing(true);
 
     try {
-      // School project payment simulation only.
-      const order = placeOrder(form, paymentMethod);
+      const order = placeOrder(form, "Paystack Demo");
+      if (order === false) throw new Error("Order failed");
 
-      navigate("/orders", {
-        state: { order }
-      });
+      setShowGateway(false);
+      navigate("/orders", { state: { order } });
     } catch (error) {
-      console.error("Checkout error:", error);
-      alert("Something went wrong. Please try again.");
+      console.error("Payment error:", error);
+      alert("Payment failed. Please try again.");
       setProcessing(false);
     }
   }
@@ -84,158 +79,86 @@ function Cart({
 
           <div>
             <h3>{item.title}</h3>
-            <p>${item.price}</p>
+            <p>{money(item.price)}</p>
 
-            <button
-              type="button"
-              onClick={() => changeQuantity(item.id, -1)}
-            >
-              -
-            </button>
-
+            <button type="button" onClick={() => changeQuantity(item.id, -1)}>−</button>
             <span> {item.quantity} </span>
+            <button type="button" onClick={() => changeQuantity(item.id, 1)}>+</button>
 
-            <button
-              type="button"
-              onClick={() => changeQuantity(item.id, 1)}
-            >
-              +
-            </button>
-
-            <button
-              type="button"
-              onClick={() => removeFromCart(item.id)}
-            >
+            <button type="button" onClick={() => removeFromCart(item.id)}>
               Remove
             </button>
           </div>
         </div>
       ))}
 
-      <h3>Total: ${total.toFixed(2)}</h3>
+      <h3>Total: {money(total)}</h3>
 
       {!showCheckout ? (
-        <button
-          type="button"
-          onClick={() => setShowCheckout(true)}
-        >
+        <button type="button" onClick={() => setShowCheckout(true)}>
           Proceed to Checkout
         </button>
       ) : (
         <form className="checkout-form" onSubmit={handleCheckout}>
           <h2>Delivery Information</h2>
 
-          <input
-            name="name"
-            placeholder="Full Name"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
+          <input name="name" placeholder="Full Name" value={form.name} onChange={handleChange} required />
+          <input name="email" type="email" placeholder="Email Address" value={form.email} onChange={handleChange} required />
+          <input name="phone" type="tel" placeholder="Phone Number" value={form.phone} onChange={handleChange} required />
+          <textarea name="address" placeholder="Delivery Address" value={form.address} onChange={handleChange} required />
 
-          <input
-            name="email"
-            type="email"
-            placeholder="Email Address"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            name="phone"
-            type="tel"
-            placeholder="Phone Number"
-            value={form.phone}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            name="address"
-            placeholder="Delivery Address"
-            value={form.address}
-            onChange={handleChange}
-            required
-          />
-
-          <h2>Choose Payment Method</h2>
+          <h2>Payment Method</h2>
 
           <div className="payment-methods">
             <label className="payment-option">
-              <input
-                type="radio"
-                name="payment"
-                value="Paystack Demo"
-                checked={paymentMethod === "Paystack Demo"}
-                onChange={e => setPaymentMethod(e.target.value)}
-              />
-
+              <input type="radio" checked readOnly />
               <strong>Paystack</strong>
-              <span>Demo payment</span>
-            </label>
-
-            <label className="payment-option">
-              <input
-                type="radio"
-                name="payment"
-                value="OPay Demo"
-                checked={paymentMethod === "OPay Demo"}
-                onChange={e => setPaymentMethod(e.target.value)}
-              />
-
-              <strong>OPay</strong>
-              <span>Demo payment</span>
-            </label>
-
-            <label className="payment-option">
-              <input
-                type="radio"
-                name="payment"
-                value="Card Demo"
-                checked={paymentMethod === "Card Demo"}
-                onChange={e => setPaymentMethod(e.target.value)}
-              />
-
-              <strong>Card</strong>
-              <span>Demo payment</span>
+              <span>Secure payment gateway</span>
             </label>
           </div>
 
-          {paymentMethod === "Paystack Demo" && (
-            <div className="demo-payment-note">
-              <h3>Paystack Demo Checkout</h3>
-              <p>
-                You selected Paystack for this demo order.
-                Click the button below to simulate a successful payment.
-              </p>
-            </div>
-          )}
-
           <p className="demo-payment-note">
-            This is a school project demonstration.
-            No real payment will be processed.
-            Do not enter card details, PINs or banking passwords.
+            This is a school project demonstration. No real payment will be processed.
           </p>
 
-          <button
-            type="submit"
-            disabled={processing}
-          >
-            {processing
-              ? "Processing Demo..."
-              : paymentMethod === "Paystack Demo"
-                ? "Pay with Paystack (Demo)"
-                : "Confirm Demo Payment"}
-          </button>
+          <button type="submit">Pay with Paystack</button>
 
-          <button
-            type="button"
-            onClick={() => setShowCheckout(false)}
-          >
+          <button type="button" onClick={() => setShowCheckout(false)}>
             Back to Cart
           </button>
         </form>
+      )}
+
+      {showGateway && (
+        <div className="gateway-overlay">
+          <div className="gateway-box">
+            <h2 className="paystack-logo">Paystack</h2>
+            <p>ShopHub Payment</p>
+            <h2>{money(total)}</h2>
+
+            <div className="gateway-info">
+              <p>Merchant: <strong>ShopHub</strong></p>
+              <p>Customer: <strong>{form.email}</strong></p>
+            </div>
+
+            <p className="demo-payment-note">
+              Demo gateway only. No real money will be charged.
+            </p>
+
+            <button type="button" onClick={confirmPayment} disabled={processing}>
+              {processing ? "Processing..." : "Simulate Successful Payment"}
+            </button>
+
+            <button
+              type="button"
+              className="cancel-payment"
+              onClick={() => setShowGateway(false)}
+              disabled={processing}
+            >
+              Cancel Payment
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

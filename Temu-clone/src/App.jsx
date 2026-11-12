@@ -65,19 +65,19 @@ function App() {
     }
   }, [currentUser]);
 
-  function addToCart(product) {
+  function addToCart(product, quantity = 1) {
     setCartItems(old => {
       const found = old.find(item => item.id === product.id);
 
       if (found) {
         return old.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
 
-      return [...old, { ...product, quantity: 1 }];
+      return [...old, { ...product, quantity }];
     });
   }
 
@@ -150,13 +150,14 @@ function App() {
     return "success";
   }
 
-  // Log out without deleting the registered account.
   function logoutAccount() {
     localStorage.removeItem("currentUser");
     setCurrentUser(null);
   }
 
   function placeOrder(details, paymentMethod) {
+    if (cartItems.length === 0) return false;
+
     const order = {
       id: Date.now(),
       date: new Date().toLocaleString(),
@@ -208,6 +209,7 @@ function App() {
             <ProductDetails
               products={products}
               addToCart={addToCart}
+              favorites={favorites}
               toggleFavorite={toggleFavorite}
             />
           }
@@ -279,7 +281,6 @@ function Account({
   const [error, setError] = useState("");
   const [confirmLogout, setConfirmLogout] = useState(false);
 
-  // Clear all form details whenever the user logs out.
   useEffect(() => {
     if (!currentUser) {
       setName("");
@@ -474,13 +475,20 @@ function Account({
 }
 
 function Favorites({ favorites }) {
+  const money = amount =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2
+    }).format(amount);
+
   return (
     <div className="products-grid">
       {favorites.map(product => (
         <div className="product-card" key={product.id}>
           <img src={product.thumbnail} alt={product.title} />
           <h3>{product.title}</h3>
-          <p>${product.price}</p>
+          <p>{money(product.price)}</p>
         </div>
       ))}
     </div>

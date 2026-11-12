@@ -23,8 +23,14 @@ function ProductList({ products, loading, addToCart, searchTerm = "" }) {
     home: ["furniture", "home-decoration", "kitchen-accessories"],
     electronics: ["smartphones", "laptops", "tablets"],
     groceries: ["groceries"]
-    
   };
+
+  const formatPrice = price =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2
+    }).format(price);
 
   const filteredProducts = products.filter(product => {
     const matchesCategory =
@@ -78,7 +84,7 @@ function ProductList({ products, loading, addToCart, searchTerm = "" }) {
               </Link>
 
               <p className="product-category">{product.category}</p>
-              <p className="product-price">${product.price}</p>
+              <p className="product-price">{formatPrice(product.price)}</p>
 
               <div className="product-buttons">
                 <button
